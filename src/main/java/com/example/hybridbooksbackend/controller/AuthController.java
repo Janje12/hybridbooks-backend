@@ -18,6 +18,7 @@ public class AuthController {
     @Autowired
     private AuthService authService;
 
+    /* Pokusao sa JWT da namestim nisam uspeo moracu preko vikenda */
     @PostMapping(value = "/login", consumes = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<UserEntity> login(String username, String password) {
         UserEntity user = this.authService.login(username, password);
