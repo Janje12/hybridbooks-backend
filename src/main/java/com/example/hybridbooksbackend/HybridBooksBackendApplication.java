@@ -9,5 +9,4 @@ public class HybridBooksBackendApplication {
     public static void main(String[] args) {
         SpringApplication.run(HybridBooksBackendApplication.class, args);
     }
-
 }
