@@ -1,5 +1,7 @@
 package com.example.hybridbooksbackend.model;
 
+import com.fasterxml.jackson.annotation.JsonBackReference;
+
 import javax.persistence.*;
 import java.sql.Date;
 import java.util.Objects;
@@ -13,8 +15,10 @@ public class ReservationEntity {
     private long idBook;
     private Date dateRented;
     private Date dateReturnal;
-    private byte returned;
+    private boolean returned;
+    @JsonBackReference
     private UserEntity userByIdUser;
+    @JsonBackReference
     private BookEntity bookByIdBook;
 
     @Id
@@ -69,11 +73,11 @@ public class ReservationEntity {
 
     @Basic
     @Column(name = "returned")
-    public byte getReturned() {
+    public boolean getReturned() {
         return returned;
     }
 
-    public void setReturned(byte returned) {
+    public void setReturned(boolean returned) {
         this.returned = returned;
     }
 

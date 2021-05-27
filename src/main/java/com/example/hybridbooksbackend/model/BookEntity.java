@@ -1,5 +1,7 @@
 package com.example.hybridbooksbackend.model;
 
+import com.fasterxml.jackson.annotation.JsonManagedReference;
+
 import javax.persistence.*;
 import java.util.Collection;
 import java.util.Objects;
@@ -15,6 +17,7 @@ public class BookEntity {
     private String coverImage;
     private int currentAmount;
     private int maxAmount;
+    @JsonManagedReference
     private Collection<ReservationEntity> reservationsByIdBook;
 
     @Id

@@ -1,6 +1,9 @@
 package com.example.hybridbooksbackend.model;
 
+import com.fasterxml.jackson.annotation.JsonManagedReference;
+
 import javax.persistence.*;
+import java.util.Collection;
 import java.util.Objects;
 
 @Entity
@@ -13,6 +16,8 @@ public class UserEntity {
     private String password;
     private String email;
     private String role;
+    @JsonManagedReference
+    private Collection<ReservationEntity> reservationsByIdUser;
 
     @Id
     @Column(name = "id_user")
@@ -95,5 +100,14 @@ public class UserEntity {
     @Override
     public int hashCode() {
         return Objects.hash(idUser, firstName, lastName, username, password, email, role);
+    }
+
+    @OneToMany(mappedBy = "userByIdUser")
+    public Collection<ReservationEntity> getReservationsByIdUser() {
+        return reservationsByIdUser;
+    }
+
+    public void setReservationsByIdUser(Collection<ReservationEntity> reservationsByIdUser) {
+        this.reservationsByIdUser = reservationsByIdUser;
     }
 }
