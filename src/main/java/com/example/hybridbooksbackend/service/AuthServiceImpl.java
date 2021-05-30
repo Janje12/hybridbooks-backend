@@ -1,41 +1,48 @@
 package com.example.hybridbooksbackend.service;
 
-import com.example.hybridbooksbackend.model.UserEntity;
+import com.example.hybridbooksbackend.model.User;
 import com.example.hybridbooksbackend.repository.UserRepository;
-import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Service;
 
 import javax.transaction.Transactional;
 import java.util.Optional;
 
 @Service
-@Transactional
 public class AuthServiceImpl implements AuthService {
 
-    @Autowired
-    private UserRepository userRepository;
+    private final UserService userService;
+    private final UserRepository userRepository;
+    private final BCryptPasswordEncoder bCryptPasswordEncoder;
+
+    public AuthServiceImpl(final UserService userService, final UserRepository userRepository,
+                           final BCryptPasswordEncoder bCryptPasswordEncoder) {
+        this.bCryptPasswordEncoder = bCryptPasswordEncoder;
+        this.userRepository = userRepository;
+        this.userService = userService;
+    }
 
     @Override
-    public UserEntity login(String username, String password) {
-        Optional<UserEntity> foundUser = this.userRepository.findByUsername(username);
-        if (foundUser.isPresent()) {
-            UserEntity user = foundUser.get();
-            return user.getPassword().equals(password) ? user : null;
+    @Transactional
+    public boolean login(String username, String password) {
+        Optional<User> foundUser = this.userRepository.findByUsername(username);
+        if (foundUser.isPresent()) { ;
+            return bCryptPasswordEncoder.matches(password, foundUser.get().getPassword());
         } else {
-            throw new Error("No such user exists!");
+            throw new RuntimeException("No such user exists!");
         }
     }
 
-
-    /* Bolji nacin da proveri po svemu da li postoji neki? Ili samo po ID proveri */
     @Override
-    public UserEntity register(UserEntity user) {
-        Optional<UserEntity> foundUser = this.userRepository.findByUsername(user.getUsername());
+    @Transactional
+    public User register(User user) {
+        Optional<User> foundUser = this.userRepository.findByUsername(user.getUsername());
         if (foundUser.isEmpty()) {
-            UserEntity newUser = this.userRepository.save(user);
+            user.setPassword(bCryptPasswordEncoder.encode(user.getPassword()));
+            User newUser = this.userService.create(user);
             return newUser;
         } else {
-            throw new Error("A user already exists!");
+            throw new RuntimeException("A user already exists!");
         }
     }
 

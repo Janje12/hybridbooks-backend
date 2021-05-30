@@ -1,15 +1,18 @@
 package com.example.hybridbooksbackend.model;
 
 import com.fasterxml.jackson.annotation.JsonManagedReference;
+import lombok.AllArgsConstructor;
+import lombok.NoArgsConstructor;
 
 import javax.persistence.*;
 import java.util.Collection;
 import java.util.Objects;
 
 @Entity
-@Table(name = "book", schema = "hybrid_books", catalog = "")
-public class BookEntity {
-    private long idBook;
+@NoArgsConstructor
+@AllArgsConstructor
+public class Book {
+    private Long id;
     private String title;
     private String description;
     private String author;
@@ -17,17 +20,28 @@ public class BookEntity {
     private String coverImage;
     private int currentAmount;
     private int maxAmount;
-    @JsonManagedReference
-    private Collection<ReservationEntity> reservationsByIdBook;
+    @JsonManagedReference(value = "bookReservations")
+    private Collection<Reservation> reservations;
 
-    @Id
-    @Column(name = "id_book")
-    public long getIdBook() {
-        return idBook;
+    public Book(Long id, String title, String description, String author, int yearReleased, String coverImage, int currentAmount, int maxAmount) {
+        this.id = id;
+        this.title = title;
+        this.description = description;
+        this.author = author;
+        this.yearReleased = yearReleased;
+        this.coverImage = coverImage;
+        this.currentAmount = currentAmount;
+        this.maxAmount = maxAmount;
     }
 
-    public void setIdBook(long idBook) {
-        this.idBook = idBook;
+    @Id
+    @Column(name = "id")
+    public Long getId() {
+        return id;
+    }
+
+    public void setId(Long id) {
+        this.id = id;
     }
 
     @Basic
@@ -104,21 +118,21 @@ public class BookEntity {
     public boolean equals(Object o) {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
-        BookEntity that = (BookEntity) o;
-        return idBook == that.idBook && yearReleased == that.yearReleased && currentAmount == that.currentAmount && maxAmount == that.maxAmount && Objects.equals(title, that.title) && Objects.equals(description, that.description) && Objects.equals(author, that.author) && Objects.equals(coverImage, that.coverImage);
+        Book book = (Book) o;
+        return yearReleased == book.yearReleased && currentAmount == book.currentAmount && maxAmount == book.maxAmount && Objects.equals(id, book.id) && Objects.equals(title, book.title) && Objects.equals(description, book.description) && Objects.equals(author, book.author) && Objects.equals(coverImage, book.coverImage);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(idBook, title, description, author, yearReleased, coverImage, currentAmount, maxAmount);
+        return Objects.hash(id, title, description, author, yearReleased, coverImage, currentAmount, maxAmount);
     }
 
-    @OneToMany(mappedBy = "bookByIdBook")
-    public Collection<ReservationEntity> getReservationsByIdBook() {
-        return reservationsByIdBook;
+    @OneToMany(mappedBy = "book")
+    public Collection<Reservation> getReservations() {
+        return reservations;
     }
 
-    public void setReservationsByIdBook(Collection<ReservationEntity> reservationsByIdBook) {
-        this.reservationsByIdBook = reservationsByIdBook;
+    public void setReservations(Collection<Reservation> reservations) {
+        this.reservations = reservations;
     }
 }

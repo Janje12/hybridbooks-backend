@@ -1,99 +1,75 @@
 package com.example.hybridbooksbackend.service;
 
-import com.example.hybridbooksbackend.model.BookEntity;
+import com.example.hybridbooksbackend.exception.EntityNotFoundException;
+import com.example.hybridbooksbackend.model.Book;
 import com.example.hybridbooksbackend.repository.BookRepository;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
-import javax.transaction.Transactional;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 
 @Service
-@Transactional
 public class BookServiceImpl implements BookService {
-    @Autowired
-    private BookRepository bookRepository;
+
+    private final BookRepository bookRepository;
+
+    public BookServiceImpl(final BookRepository bookRepository) {
+        this.bookRepository = bookRepository;
+    }
 
     @Override
-    public BookEntity createBook(BookEntity book) throws Exception {
-        BookEntity foundBook = null;
-        if (book.getIdBook() != 0)
-            foundBook = this.getBook("id", book.getIdBook() + "");
+    @Transactional
+    public Book create(Book book) {
+        Book foundBook = null;
+        if (book.getId() != null)
+            foundBook = this.get(book.getId());
         if (foundBook == null) {
-            BookEntity newBook = this.bookRepository.save(book);
+            Book newBook = this.bookRepository.save(book);
             return newBook;
         } else {
-            throw new Exception("That book already exists!");
+            throw new EntityNotFoundException("That book already exists!");
         }
     }
 
     @Override
-    public List<BookEntity> getAllBooks() {
-        List<BookEntity> bookList = bookRepository.findAll();
-        if (bookList.size() > 0) {
-            return bookList;
-        } else {
-            return new ArrayList<BookEntity>();
-        }
+    @Transactional(readOnly = true)
+    public List<Book> getAll() {
+        return bookRepository.findAll();
     }
 
     @Override
-    public BookEntity getBook(String type, String value) throws Exception {
-        Optional<BookEntity> book = Optional.empty();
-        if (type.equals("id"))
-            book = this.bookRepository.findById(Long.parseLong(value));
-        else if (type.equals("title"))
-            book = this.bookRepository.findByTitle(value);
-        else if (type.equals("description"))
-            book = this.bookRepository.findByDescriptionContaining(value);
-        else if (type.equals("author"))
-            book = this.bookRepository.findByAuthor(value);
-        else if (type.equals("yearReleased"))
-            book = this.bookRepository.findByYearReleased(Integer.parseInt(value));
-        else if (type.equals("coverImage"))
-            book = this.bookRepository.findByCoverImage(value);
-        else if (type.equals("currentAmount"))
-            book = this.bookRepository.findByCurrentAmount(Integer.parseInt(value));
-        else if (type.equals("maxAmount"))
-            book = this.bookRepository.findByMaxAmount(Integer.parseInt(value));
-
+    @Transactional(readOnly = true)
+    public Book get(Long id) {
+        Optional<Book> book = this.bookRepository.findById(id);
         if (book.isPresent())
             return book.get();
         else
-            throw new Exception("No book with " + type + ": " + value);
+            throw new EntityNotFoundException("No book with id:" + id);
     }
 
     @Override
-    public BookEntity updateBook(BookEntity book) throws Exception {
-        BookEntity foundBook = this.getBook("id", book.getIdBook() + "");
+    @Transactional
+    public Book update(Book book) {
+        Book foundBook = this.get(book.getId());
         if (foundBook != null) {
-            BookEntity newBook = foundBook;
-            newBook.setTitle(book.getTitle());
-            newBook.setAuthor(book.getAuthor());
-            newBook.setCoverImage(book.getCoverImage());
-            newBook.setDescription(book.getDescription());
-            newBook.setCurrentAmount(book.getCurrentAmount());
-            newBook.setMaxAmount(book.getMaxAmount());
-            newBook.setYearReleased(book.getYearReleased());
-
+            Book newBook = new Book(book.getId(), book.getTitle(), book.getDescription(), book.getAuthor(), book.getYearReleased(),
+                    book.getCoverImage(), book.getCurrentAmount(), book.getMaxAmount());
             newBook = this.bookRepository.save(newBook);
             return newBook;
         } else {
-            throw new Exception("No such book exists!");
+            throw new EntityNotFoundException("No such book exists!");
         }
     }
 
     @Override
-    public BookEntity deleteBook(String type, String value) throws Exception {
-        BookEntity book = this.getBook(type, value);
+    public void delete(Long id) {
+        Book book = this.get(id);
         if (book != null) {
-            BookEntity deletedBook = book;
-            this.bookRepository.deleteById(deletedBook.getIdBook());
-            return book;
+            Book deletedBook = book;
+            this.bookRepository.deleteById(deletedBook.getId());
         } else {
-            throw new Exception("No book with " + type + ": " + value);
+            throw new EntityNotFoundException("No book with id: " + id);
         }
     }
 }

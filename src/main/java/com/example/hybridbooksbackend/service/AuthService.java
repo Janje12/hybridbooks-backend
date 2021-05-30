@@ -1,9 +1,9 @@
 package com.example.hybridbooksbackend.service;
 
-import com.example.hybridbooksbackend.model.UserEntity;
+import com.example.hybridbooksbackend.model.User;
 
 public interface AuthService {
-    UserEntity login(String username, String password);
-    UserEntity register(UserEntity user);
+    boolean login(String username, String password);
+    User register(User user);
     void logout();
 }

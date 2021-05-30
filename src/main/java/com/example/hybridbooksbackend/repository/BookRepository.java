@@ -1,16 +1,16 @@
 package com.example.hybridbooksbackend.repository;
 
-import com.example.hybridbooksbackend.model.BookEntity;
+import com.example.hybridbooksbackend.model.Book;
 import org.springframework.data.jpa.repository.JpaRepository;
 
 import java.util.Optional;
 
-public interface BookRepository extends JpaRepository<BookEntity, Long> {
-    Optional<BookEntity> findByTitle(String title);
-    Optional<BookEntity> findByDescriptionContaining(String description);
-    Optional<BookEntity> findByAuthor(String author);
-    Optional<BookEntity> findByCoverImage(String coverImage);
-    Optional<BookEntity> findByYearReleased(int yearReleased);
-    Optional<BookEntity> findByCurrentAmount(int currentAmount);
-    Optional<BookEntity> findByMaxAmount(int maxAmount);
+public interface BookRepository extends JpaRepository<Book, Long> {
+    Optional<Book> findByTitle(String title);
+    Optional<Book> findByDescriptionContaining(String description);
+    Optional<Book> findByAuthor(String author);
+    Optional<Book> findByCoverImage(String coverImage);
+    Optional<Book> findByYearReleased(int yearReleased);
+    Optional<Book> findByCurrentAmount(int currentAmount);
+    Optional<Book> findByMaxAmount(int maxAmount);
 }

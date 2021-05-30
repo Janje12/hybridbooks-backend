@@ -1,55 +1,68 @@
 package com.example.hybridbooksbackend.controller;
 
-import com.example.hybridbooksbackend.model.ReservationEntity;
+import com.example.hybridbooksbackend.dto.reservation.ReservationCreateDto;
+import com.example.hybridbooksbackend.dto.reservation.ReservationUpdateDto;
+import com.example.hybridbooksbackend.dto.reservation.ReservationViewDto;
+import com.example.hybridbooksbackend.model.Reservation;
 import com.example.hybridbooksbackend.service.ReservationService;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.http.HttpHeaders;
+import org.modelmapper.ModelMapper;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
-import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
+import java.util.stream.Collectors;
 
 @RestController
-@RequestMapping(value = "/api/reservation", produces = MediaType.APPLICATION_JSON_VALUE)
+@RequestMapping(value = "/api/reservations", produces = MediaType.APPLICATION_JSON_VALUE)
 public class ReservationController {
 
-    @Autowired
-    private ReservationService reservationService;
+    private final ReservationService reservationService;
+    private final ModelMapper modelMapper;
 
-    @GetMapping(produces = MediaType.APPLICATION_JSON_VALUE)
-    public ResponseEntity<List<ReservationEntity>> getAllReservations() {
-        List<ReservationEntity> list = reservationService.getAllReservations();
-        System.err.println(list);
-        return new ResponseEntity<List<ReservationEntity>>(list, new HttpHeaders(), HttpStatus.OK);
+    public ReservationController(final ReservationService reservationService, final ModelMapper modelMapper) {
+        this.modelMapper = modelMapper;
+        this.reservationService = reservationService;
     }
 
-    @GetMapping("/{type}/{value}")
-    public ResponseEntity<ReservationEntity> getReservation(@PathVariable("type") String type, @PathVariable("value") String value)
-            throws Exception {
-        ReservationEntity entity = reservationService.getReservation(type, value);
-        return new ResponseEntity<ReservationEntity>(entity, new HttpHeaders(), HttpStatus.OK);
+    @GetMapping
+    @ResponseStatus(HttpStatus.OK)
+    public List<ReservationViewDto> getAllReservations() {
+        List<Reservation> reservationEntities = reservationService.getAll();
+        List<ReservationViewDto> reservationDtos = reservationEntities.stream()
+                .map(b -> modelMapper.map(b, ReservationViewDto.class)).collect(Collectors.toList());
+        return reservationDtos;
     }
 
-    /* Proveri kako da ID sam pravi Book i User */
+    @GetMapping("/{id}")
+    @ResponseStatus(HttpStatus.OK)
+    public ReservationViewDto getReservation(@PathVariable("id") Long id) {
+        Reservation reservationEntity = reservationService.get(id);
+        ReservationViewDto reservationDto = modelMapper.map(reservationEntity, ReservationViewDto.class);
+        return reservationDto;
+    }
+
     @PostMapping(consumes = MediaType.APPLICATION_JSON_VALUE)
-    public ResponseEntity<ReservationEntity> createReservation(@RequestBody ReservationEntity user) throws Exception {
-        ReservationEntity created = reservationService.createReservation(user);
-        return new ResponseEntity<ReservationEntity>(created, new HttpHeaders(), HttpStatus.OK);
+    @ResponseStatus(HttpStatus.OK)
+    public ReservationCreateDto createReservation(@RequestBody ReservationCreateDto reservationDto) {
+        Reservation reservationEntity = modelMapper.map(reservationDto, Reservation.class);
+        reservationEntity = reservationService.create(reservationEntity);
+        reservationDto = modelMapper.map(reservationEntity, ReservationCreateDto.class);
+        return reservationDto;
     }
 
-    @PatchMapping
-    public ResponseEntity<ReservationEntity> updateReservation(ReservationEntity user)
-            throws Exception {
-        ReservationEntity updated = reservationService.updateReservation(user);
-        return new ResponseEntity<ReservationEntity>(updated, new HttpHeaders(), HttpStatus.OK);
+    @PutMapping(consumes = MediaType.APPLICATION_JSON_VALUE)
+    @ResponseStatus(HttpStatus.OK)
+    public ReservationUpdateDto updateReservation(@RequestBody ReservationUpdateDto reservationDto) {
+        Reservation reservationEntity = modelMapper.map(reservationDto, Reservation.class);
+        reservationEntity = reservationService.update(reservationEntity);
+        reservationDto = modelMapper.map(reservationEntity, ReservationUpdateDto.class);
+        return reservationDto;
     }
 
-    @DeleteMapping("/{type}/{value}")
-    public ResponseEntity<ReservationEntity> deleteReservation(@PathVariable("type") String type, @PathVariable("value") String value)
-            throws Exception {
-        ReservationEntity deleted = reservationService.deleteReservation(type, value);
-        return new ResponseEntity<ReservationEntity>(deleted, new HttpHeaders(), HttpStatus.OK);
+    @DeleteMapping("/{id}")
+    @ResponseStatus(HttpStatus.OK)
+    public void deleteReservation(@PathVariable("id") Long id) {
+        reservationService.delete(id);
     }
 }

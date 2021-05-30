@@ -1,13 +1,13 @@
 package com.example.hybridbooksbackend.service;
 
-import com.example.hybridbooksbackend.model.BookEntity;
+import com.example.hybridbooksbackend.model.Book;
 
 import java.util.List;
 
 public interface BookService {
-    BookEntity createBook(BookEntity book) throws Exception;
-    List<BookEntity> getAllBooks();
-    BookEntity getBook(String type, String value) throws Exception;
-    BookEntity updateBook(BookEntity book) throws Exception;
-    BookEntity deleteBook(String type, String value) throws Exception;
+    Book create(Book book);
+    List<Book> getAll();
+    Book get(Long id);
+    Book update(Book book);
+    void delete(Long id);
 }

@@ -1,53 +1,69 @@
 package com.example.hybridbooksbackend.controller;
 
-import com.example.hybridbooksbackend.model.BookEntity;
+import com.example.hybridbooksbackend.dto.book.BookCreateDto;
+import com.example.hybridbooksbackend.dto.book.BookUpdateDto;
+import com.example.hybridbooksbackend.dto.book.BookViewDto;
+import com.example.hybridbooksbackend.model.Book;
 import com.example.hybridbooksbackend.service.BookService;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.http.HttpHeaders;
+import org.modelmapper.ModelMapper;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
-import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
+import java.util.stream.Collectors;
 
 @RestController
-@RequestMapping(value = "/api/book", produces = MediaType.APPLICATION_JSON_VALUE)
+@RequestMapping(value = "/api/books", produces = MediaType.APPLICATION_JSON_VALUE)
 public class BookController {
 
-    @Autowired
-    private BookService bookService;
+    private final BookService bookService;
+    private final ModelMapper modelMapper;
 
-    @GetMapping(produces = MediaType.APPLICATION_JSON_VALUE)
-    public ResponseEntity<List<BookEntity>> getAllBooks() {
-        List<BookEntity> list = bookService.getAllBooks();
-        return new ResponseEntity<List<BookEntity>>(list, new HttpHeaders(), HttpStatus.OK);
+    public BookController(final BookService bookService, final ModelMapper modelMapper) {
+        this.modelMapper = modelMapper;
+        this.bookService = bookService;
     }
 
-    @GetMapping("/{type}/{value}")
-    public ResponseEntity<BookEntity> getBook(@PathVariable("type") String type, @PathVariable("value") String value)
-            throws Exception {
-        BookEntity entity = bookService.getBook(type, value);
-        return new ResponseEntity<BookEntity>(entity, new HttpHeaders(), HttpStatus.OK);
+    @GetMapping
+    @ResponseStatus(HttpStatus.OK)
+    public List<BookViewDto> getAllBooks() {
+        List<Book> bookEntities = bookService.getAll();
+        List<BookViewDto> booksDto = bookEntities.stream()
+                .map(b -> modelMapper.map(b, BookViewDto.class)).collect(Collectors.toList());
+        return booksDto;
+    }
+
+    @GetMapping("/{id}")
+    @ResponseStatus(HttpStatus.OK)
+    public BookViewDto getBook(@PathVariable("id") Long id) {
+        Book bookEntity = bookService.get(id);
+        BookViewDto bookDto = modelMapper.map(bookEntity, BookViewDto.class);
+        return bookDto;
     }
 
     @PostMapping(consumes = MediaType.APPLICATION_JSON_VALUE)
-    public ResponseEntity<BookEntity> createBook(@RequestBody BookEntity Book) throws Exception {
-        BookEntity created = bookService.createBook(Book);
-        return new ResponseEntity<BookEntity>(created, new HttpHeaders(), HttpStatus.OK);
+    @ResponseStatus(HttpStatus.OK)
+    public BookCreateDto createBook(@RequestBody BookCreateDto bookDto) {
+        Book bookEntity = modelMapper.map(bookDto, Book.class);
+        bookEntity = bookService.create(bookEntity);
+        bookDto = modelMapper.map(bookEntity, BookCreateDto.class);
+        return bookDto;
     }
 
-    @PatchMapping
-    public ResponseEntity<BookEntity> updateBook(BookEntity Book)
-            throws Exception {
-        BookEntity updated = bookService.updateBook(Book);
-        return new ResponseEntity<BookEntity>(updated, new HttpHeaders(), HttpStatus.OK);
+    @PutMapping(consumes = MediaType.APPLICATION_JSON_VALUE)
+    @ResponseStatus(HttpStatus.OK)
+    public BookUpdateDto updateBook(@RequestBody BookUpdateDto bookDto) {
+        Book bookEntity = modelMapper.map(bookDto, Book.class);
+        bookEntity = bookService.update(bookEntity);
+        bookDto = modelMapper.map(bookEntity, BookUpdateDto.class);
+        return bookDto;
     }
 
-    @DeleteMapping("/{type}/{value}")
-    public ResponseEntity<BookEntity> deleteBook(@PathVariable("type") String type, @PathVariable("value") String value)
-            throws Exception {
-        BookEntity deleted = bookService.deleteBook(type, value);
-        return new ResponseEntity<BookEntity>(deleted, new HttpHeaders(), HttpStatus.OK);
+    @DeleteMapping("/{id}")
+    @ResponseStatus(HttpStatus.OK)
+    public void deleteBook(@PathVariable("id") Long id) {
+        bookService.delete(id);
     }
+
 }

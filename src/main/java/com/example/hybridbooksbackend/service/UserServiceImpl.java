@@ -1,96 +1,100 @@
 package com.example.hybridbooksbackend.service;
 
-import com.example.hybridbooksbackend.model.UserEntity;
+import com.example.hybridbooksbackend.exception.EntityNotFoundException;
+import com.example.hybridbooksbackend.model.User;
 import com.example.hybridbooksbackend.repository.UserRepository;
-import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.security.core.userdetails.UserDetails;
+import org.springframework.security.core.userdetails.UsernameNotFoundException;
+import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
-import javax.transaction.Transactional;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 
 @Service
-@Transactional
 public class UserServiceImpl implements UserService {
 
-    @Autowired
-    private UserRepository userRepository;
+    private final UserRepository userRepository;
+    private final RoleService roleService;
+
+    public UserServiceImpl(final UserRepository userRepository, final RoleService roleService) {
+        this.userRepository = userRepository;
+        this.roleService = roleService;
+    }
 
     @Override
-    public UserEntity createUser(UserEntity user) throws Exception {
-        UserEntity foundUser = null;
-        if (user.getIdUser() != 0)
-            foundUser = this.getUser("id", user.getIdUser() + "");
+    @Transactional
+    public User create(User user) {
+        User foundUser = null;
+        if (user.getId() != null)
+            foundUser = this.get(user.getId());
         if (foundUser == null) {
-            System.err.println(user);
-            UserEntity newUser = this.userRepository.save(user);
+            user = this.userRepository.save(user);
+            user = this.roleService.addRoleCustomer(user);
+            User newUser = this.userRepository.save(user);
             return newUser;
         } else {
-            throw new Exception("User already exists!");
+            throw new EntityNotFoundException("User already exists!");
         }
     }
 
     @Override
-    public List<UserEntity> getAllUsers() {
-        List<UserEntity> userList = userRepository.findAll();
-        if (userList.size() > 0) {
-            return userList;
-        } else {
-            return new ArrayList<UserEntity>();
-        }
+    @Transactional(readOnly = true)
+    public List<User> getAll() {
+        return userRepository.findAll();
     }
 
     @Override
-    public UserEntity getUser(String type, String value) throws Exception {
-        Optional<UserEntity> user = Optional.empty();
-        if (type.equals("id"))
-            user = this.userRepository.findById(Long.parseLong(value));
-        else if (type.equals("username"))
-            user = this.userRepository.findByUsername(value);
-        else if (type.equals("firstName"))
-            user = this.userRepository.findByFirstName(value);
-        else if (type.equals("lastName"))
-            user = this.userRepository.findByLastName(value);
-        else if (type.equals("email"))
-            user = this.userRepository.findByEmail(value);
-        else if (type.equals("role"))
-            user = this.userRepository.findByRole(value);
-
+    @Transactional(readOnly = true)
+    public User get(Long id) {
+        Optional<User> user = this.userRepository.findById(id);
         if (user.isPresent())
             return user.get();
         else
-            throw new Exception("No user with " + type + ": " + value);
+            throw new EntityNotFoundException("No user with id: " + id);
     }
 
     /* Don't set the password bad security design =) */
     @Override
-    public UserEntity updateUser(UserEntity user) throws Exception {
-        UserEntity foundUser = this.getUser("id", user.getIdUser() + "");
+    @Transactional
+    public User update(User user) {
+        User foundUser = this.get(user.getId());
         if (foundUser != null) {
-            UserEntity newUser = foundUser;
-            newUser.setEmail(user.getEmail());
-            newUser.setFirstName(user.getFirstName());
-            newUser.setLastName(user.getLastName());
-            newUser.setUsername(user.getUsername());
-            newUser.setRole(user.getRole());
-
+            User newUser = new User(user.getId(), user.getFirstName(), user.getLastName(), user.getUsername(),
+                    user.getPassword(), user.getEmail());
             newUser = this.userRepository.save(newUser);
             return newUser;
         } else {
-            throw new Exception("No such user exists!");
+            throw new EntityNotFoundException("No such user exists!");
         }
     }
 
     @Override
-    public UserEntity deleteUser(String type, String value) throws Exception {
-        UserEntity user = this.getUser(type, value);
+    public void delete(Long id) {
+        User user = this.get(id);
         if (user != null) {
-            UserEntity deletedUser = user;
-            this.userRepository.deleteById(deletedUser.getIdUser());
-            return user;
+            User deletedUser = user;
+            this.userRepository.deleteById(deletedUser.getId());
         } else {
-            throw new Exception("No user with " + type + ": " + value);
+            throw new EntityNotFoundException("No user with id: " + id);
         }
+    }
+
+    @Override
+    public User findByUsername(String username) {
+        Optional<User> user = this.userRepository.findByUsername(username);
+        if (user.isPresent())
+            return user.get();
+        else
+            throw new EntityNotFoundException("No user with username: " + username);
+    }
+
+    @Override
+    public UserDetails loadUserByUsername(String username) throws UsernameNotFoundException {
+        User user = this.findByUsername(username);
+        return new
+                org.springframework.security.core.userdetails.User(user.getUsername(), user.getPassword(), new ArrayList<>());
     }
 }

@@ -1,53 +1,68 @@
 package com.example.hybridbooksbackend.controller;
 
-import com.example.hybridbooksbackend.model.UserEntity;
+import com.example.hybridbooksbackend.dto.user.UserCreateDto;
+import com.example.hybridbooksbackend.dto.user.UserUpdateDto;
+import com.example.hybridbooksbackend.dto.user.UserViewDto;
+import com.example.hybridbooksbackend.model.User;
 import com.example.hybridbooksbackend.service.UserService;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.http.HttpHeaders;
+import org.modelmapper.ModelMapper;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
-import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
+import java.util.stream.Collectors;
 
 @RestController
-@RequestMapping(value = "/api/user", produces = MediaType.APPLICATION_JSON_VALUE)
+@RequestMapping(value = "/api/users", produces = MediaType.APPLICATION_JSON_VALUE)
 public class UserController {
 
-    @Autowired
-    private UserService userService;
+    private final UserService userService;
+    private final ModelMapper modelMapper;
 
-    @GetMapping(produces = MediaType.APPLICATION_JSON_VALUE)
-    public ResponseEntity<List<UserEntity>> getAllUsers() {
-        List<UserEntity> list = userService.getAllUsers();
-        return new ResponseEntity<List<UserEntity>>(list, new HttpHeaders(), HttpStatus.OK);
+    public UserController(final UserService userService, final ModelMapper modelMapper) {
+        this.modelMapper = modelMapper;
+        this.userService = userService;
     }
 
-    @GetMapping("/{type}/{value}")
-    public ResponseEntity<UserEntity> getUser(@PathVariable("type") String type, @PathVariable("value") String value)
-            throws Exception {
-        UserEntity entity = userService.getUser(type, value);
-        return new ResponseEntity<UserEntity>(entity, new HttpHeaders(), HttpStatus.OK);
+    @GetMapping
+    @ResponseStatus(HttpStatus.OK)
+    public List<UserViewDto> getAllUsers() {
+        List<User> userEntities = userService.getAll();
+        List<UserViewDto> userDtos = userEntities.stream()
+                .map(b -> modelMapper.map(b, UserViewDto.class)).collect(Collectors.toList());
+        return userDtos;
+    }
+
+    @GetMapping("/{id}")
+    @ResponseStatus(HttpStatus.OK)
+    public UserViewDto getUser(@PathVariable("id") Long id) {
+        User userEntity = userService.get(id);
+        UserViewDto userDto = modelMapper.map(userEntity, UserViewDto.class);
+        return userDto;
     }
 
     @PostMapping(consumes = MediaType.APPLICATION_JSON_VALUE)
-    public ResponseEntity<UserEntity> createUser(@RequestBody UserEntity user) throws Exception {
-        UserEntity created = userService.createUser(user);
-        return new ResponseEntity<UserEntity>(created, new HttpHeaders(), HttpStatus.OK);
+    @ResponseStatus(HttpStatus.OK)
+    public UserCreateDto createUser(@RequestBody UserCreateDto userDto) {
+        User userEntity = modelMapper.map(userDto, User.class);
+        userEntity = userService.create(userEntity);
+        userDto = modelMapper.map(userEntity, UserCreateDto.class);
+        return userDto;
     }
 
-    @PatchMapping
-    public ResponseEntity<UserEntity> updateUser(UserEntity user)
-            throws Exception {
-        UserEntity updated = userService.updateUser(user);
-        return new ResponseEntity<UserEntity>(updated, new HttpHeaders(), HttpStatus.OK);
+    @PutMapping(consumes = MediaType.APPLICATION_JSON_VALUE)
+    @ResponseStatus(HttpStatus.OK)
+    public UserUpdateDto updateUser(@RequestBody UserUpdateDto userDto) {
+        User userEntity = modelMapper.map(userDto, User.class);
+        userEntity = userService.update(userEntity);
+        userDto = modelMapper.map(userEntity, UserUpdateDto.class);
+        return userDto;
     }
 
-    @DeleteMapping("/{type}/{value}")
-    public ResponseEntity<UserEntity> deleteUser(@PathVariable("type") String type, @PathVariable("value") String value)
-            throws Exception {
-        UserEntity deleted = userService.deleteUser(type, value);
-        return new ResponseEntity<UserEntity>(deleted, new HttpHeaders(), HttpStatus.OK);
+    @DeleteMapping("/{id}")
+    @ResponseStatus(HttpStatus.OK)
+    public void deleteUser(@PathVariable("id") Long id) {
+        userService.delete(id);
     }
 }
